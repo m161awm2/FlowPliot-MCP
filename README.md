@@ -3,7 +3,7 @@
 
 # pmcp — FlowPliot MCP
 
-AI 네이티브 [해커톤 신입인데 만렙입니다](https://apply.vooy.dev/) 본선 최종 제출물
+AI 네이티브 해커톤 [신입인데 만렙입니다](https://apply.vooy.dev/) 본선 최종 제출물
 
 https://youtu.be/wTJm9R8l5Fs <span style="opacity: 0.5;">참고 - 시간의 압박 때문에 시현 영상의 퀄리티는 높은편이 아닙니다.</span>
 

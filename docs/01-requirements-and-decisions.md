@@ -143,11 +143,13 @@
 - 확인할 수 없는 항목은 `unverified`로 사유와 함께 반환한다. 판정은 `verified / partially_verified / failed`다.
 - 창이 없거나 아직 실행 이력이 없으면 `partially_verified`이고, 흐름 상태는 `verified`로 올리지 않는다.
 
-### D12. 도구 수: 16 → 19 (근거는 `02-mcp-tool-spec.md`)
+### D12. 도구 수: 16 → 20 (근거는 `02-mcp-tool-spec.md`)
 - `define_data_contract`: 계약을 ID와 버전으로 저장한다. 없으면 모든 도구가 거대한 자유 형식 JSON을 받게 된다.
 - `get_operation`: 장시간 작업의 상태를 조회한다. `observe_flow`는 흐름 상태를 보는 도구라 역할이 다르다.
 - `list_workspace`: 새 세션에서 계정, 흐름, 대기 중 계획의 ID를 찾는다. 이게 없으면 에이전트가 ID를 얻을
   방법이 없다.
+- `get_run_failure`: 한 실행의 잘리지 않은 오류 원문과 Athena 쿼리 상태를 읽는다. `diagnose_failure`는 incident를 만드는
+  쓰기 도구라 단순 조회에 쓰기 어려워, 기록을 남기지 않는 읽기 전용 도구를 따로 두었다.
 - 도구 정의 총량: 처음 69.9 KB였다. 계획·작업 출력 스키마를 평탄화해 55.1 KB로 줄였다(`docs/tool-schemas.json`
   기준). 지연 로딩이 없는 클라이언트를 고려한 조치다. 남은 양의 대부분(약 8.7 KB)은 `define_data_contract`의
   계약 입력 스키마다.

@@ -196,7 +196,29 @@
   - `further_checks`: 추가로 확인할 것
   - `affected`: 영향받은 창과 파일
 - `deep_probe=true`이면 원인 파일을 찾는 조회를 백그라운드 operation으로 실행한다(Athena, 소량 비용).
-- **부작용**: 장애 레코드를 만든다.
+- **부작용**: 장애 레코드를 만든다. 동일 증거의 미해결 incident는 재사용한다. 기존 중복 기록은 자동 삭제하지 않는다.
+
+### get_run_failure (추가)
+- **사용 상황**: 다른 도구가 보여준 오류 발췌가 잘렸을 때, 한 실행의 전체 오류 원문과 Athena 쿼리 상태를 읽을 때.
+- **비슷한 도구와 차이**: `diagnose_failure`는 장애(incident)를 열고 가설을 만들며 레코드를 쓴다. 이 도구는 이미 있는
+  실행 기록만 읽고 아무것도 만들지 않는다. 가설이나 복구 제안은 하지 않는다.
+- **입력**: `flow_id`, `execution`(실행 이름 또는 실행 ARN. `observe_flow`, `diagnose_failure`, `get_operation`에서
+  얻는다), `next_token?`(이전 호출 결과의 값).
+- **출력**:
+  - 실행 요약: `execution_arn`, `status`, `error`, `cause`
+  - `failures[]`: 실패·시간 초과·중단 이벤트의 `event_id`, `type`, `error`, `cause`(원문, 자르지 않음)
+  - `athena_queries[]`: `query_execution_id`, `state`, `state_change_reason`, `athena_error`, `workgroup`.
+    실행 결과와 실패 원인에서 찾은 쿼리 ID만 조회한다. 사용자가 넣은 실행 입력은 쿼리 참조로 보지 않는다.
+  - `next_token`, `history_complete`: 이력은 최신부터 100개 이벤트 단위다. `next_token`이 있으면 같은 `execution`으로
+    다시 호출해 이어서 읽는다.
+  - `query_lookup_note`: 이 페이지에서 쿼리 ID를 찾지 못했을 때의 안내
+- **오류**:
+  - `PRECONDITION_FAILED`: 흐름에 Step Functions 상태 머신이 없음
+  - `FORBIDDEN`: 실행이 이 흐름의 상태 머신 소속이 아님, 또는 쿼리의 workgroup이 이 흐름의 것이 아님
+  - 흐름 조회 실패와 AWS 호출 오류는 공통 오류 코드를 따른다.
+- **부작용**: 없음. 읽기 전용 런타임(`write=False`)으로 Step Functions와 Athena를 읽기만 한다. incident, 쿼리,
+  복구 작업을 만들지 않는다.
+- **다음 작업**: 원인 분석이 필요하면 `diagnose_failure`, 복구는 `plan_recovery`.
 
 ### plan_recovery
 - **입력**: `incident_id`, `strategy?`(기본값은 최상위 가설의 제안)
@@ -218,10 +240,4 @@
 |---|---|
 | 신규 생성 | list_workspace → profile_source → define_data_contract → validate_architecture → prepare_changes → preview_changes → (사람 승인) → apply_changes → get_operation → verify_data_flow → get_operation |
 | 규칙 수정 | prepare_changes(flow_id) → preview_changes → (승인) → apply_changes(재처리 포함) → get_operation → verify_data_flow |
-| 장애 | observe_flow → diagnose_failure(deep_probe) → get_operation → plan_recovery → preview_changes → (승인) → execute_recovery → get_operation |
-
-## 실패 실행 상세 조회
-
-`get_run_failure(flow_id, execution, next_token?)`는 실행 이름 또는 ARN으로 기존 Step Functions 이력과 Athena 오류를 읽는다. 새 incident, 쿼리, 복구 작업을 생성하지 않는다. `athena_queries`에는 query_execution_id, state_change_reason, athena_error가 담긴다. `cause`와 실패 이벤트의 원문은 자르지 않는다. 이력은 100개 이벤트 단위이며 next_token이 있으면 같은 실행으로 이어서 조회한다. 실행의 flow 소속, 호출자 계정 접근 권한 및 Athena workgroup을 검사한다.
-
-`diagnose_failure`는 동일 증거의 미해결 incident를 재사용한다. 기존 중복 기록은 자동 삭제하지 않는다.
+| 장애 | observe_flow → (오류가 잘렸으면 get_run_failure) → diagnose_failure(deep_probe) → get_operation → plan_recovery → preview_changes → (승인) → execute_recovery → get_operation |

@@ -1,0 +1,19 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: pmcp platform - container registry (deployed before the platform stack so the image can be pushed).
+Resources:
+  Repository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: pmcp
+      ImageScanningConfiguration: {ScanOnPush: true}
+      ImageTagMutability: IMMUTABLE
+      EmptyOnDelete: true
+      LifecyclePolicy:
+        LifecyclePolicyText: >-
+          {"rules":[{"rulePriority":1,"description":"keep last 10","selection":{"tagStatus":"any",
+          "countType":"imageCountMoreThan","countNumber":10},"action":{"type":"expire"}}]}
+      Tags:
+        - {Key: managed-by, Value: pipeline-mcp}
+Outputs:
+  RepositoryUri:
+    Value: !GetAtt Repository.RepositoryUri

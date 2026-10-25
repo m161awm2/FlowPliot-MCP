@@ -1,0 +1,372 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  pmcp onboarding - lets the pmcp platform read (and optionally deploy pmcp-* data pipelines in) this account.
+  pmcp never receives credentials; it assumes these roles with your External ID.
+
+Parameters:
+  ExternalId:
+    Type: String
+    MinLength: 16
+    NoEcho: true
+    Description: Shown on the pmcp /connect page. Required by every AssumeRole.
+  PlatformPrincipalArns:
+    Type: CommaDelimitedList
+    Description: pmcp platform role ARNs allowed to assume these roles (filled in by the /connect link).
+  EnableDeployer:
+    Type: String
+    AllowedValues: ["true", "false"]
+    Default: "false"
+    Description: Create pmcp-deployer and pmcp-cfn-exec so pmcp can deploy pmcp-* stacks after your approval.
+  AllowedRegions:
+    Type: CommaDelimitedList
+    Default: ap-southeast-2
+    Description: Regions pmcp may deploy into (also enforced by the platform).
+
+Conditions:
+  Deployer: !Equals [!Ref EnableDeployer, "true"]
+
+Resources:
+  # The artifacts bucket (pmcp-artifacts-<account>-<region>) is created by pmcp on first preview, per region.
+
+  # Every role a pmcp flow creates must carry this boundary (enforced in pmcp-cfn-exec below).
+  Boundary:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: pmcp-boundary
+      Description: Upper bound for roles created by pmcp flows.
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DataServices
+            Effect: Allow
+            Action:
+              - s3:*
+              - glue:*
+              - athena:*
+              - states:*
+              - kinesis:*
+              - firehose:*
+              - dynamodb:*
+              - lambda:InvokeFunction
+              - lambda:GetFunctionConfiguration
+              - logs:*
+              - cloudwatch:PutMetricData
+              - sns:Publish
+              - sqs:SendMessage
+              - kms:Decrypt
+              - kms:GenerateDataKey
+              - lakeformation:GetDataAccess
+            Resource: "*"
+          - Sid: NoPrivilegeEscalation
+            Effect: Deny
+            Action: ["iam:*", "organizations:*", "account:*", "sts:AssumeRole"]
+            Resource: "*"
+
+  ReaderRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: pmcp-reader
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: {AWS: !Ref PlatformPrincipalArns}
+            Action: sts:AssumeRole
+            Condition: {StringEquals: {sts:ExternalId: !Ref ExternalId}}
+      Policies:
+        - PolicyName: pmcp-read
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: Inventory
+                Effect: Allow
+                Action:
+                  - s3:ListAllMyBuckets
+                  - s3:GetBucketLocation
+                  - s3:ListBucket
+                  - s3:GetObject
+                  - glue:Get*
+                  - athena:List*
+                  - athena:Get*
+                  - kinesis:Describe*
+                  - kinesis:List*
+                  - kinesis:GetShardIterator
+                  - kinesis:GetRecords
+                  - firehose:Describe*
+                  - firehose:List*
+                  - kafka:List*
+                  - kafka:Describe*
+                  - dynamodb:Describe*
+                  - dynamodb:List*
+                  - dynamodb:Scan
+                  - dynamodb:GetItem
+                  - dynamodb:Query
+                  - rds:Describe*
+                  - es:ListDomainNames
+                  - es:Describe*
+                  - redshift:Describe*
+                  - redshift-serverless:List*
+                  - redshift-serverless:Get*
+                  - lambda:List*
+                  - lambda:GetFunction
+                  - states:List*
+                  - states:Describe*
+                  - states:GetExecutionHistory
+                  - scheduler:List*
+                  - scheduler:Get*
+                  - logs:FilterLogEvents
+                  - logs:Describe*
+                  - logs:StartQuery
+                  - logs:GetQueryResults
+                  - cloudwatch:GetMetricStatistics
+                  - cloudwatch:GetMetricData
+                  - cloudwatch:DescribeAlarms
+                  - cloudwatch:ListMetrics
+                  - cloudformation:Describe*
+                  - cloudformation:GetTemplate
+                  - cloudformation:List*
+                  - iam:GetRole
+                  - iam:GetRolePolicy
+                  - iam:ListRolePolicies
+                  - iam:ListAttachedRolePolicies
+                  - iam:SimulatePrincipalPolicy
+                  - lakeformation:GetDataLakeSettings
+                  - lakeformation:ListPermissions
+                  - servicequotas:ListServiceQuotas
+                  - servicequotas:GetServiceQuota
+                  - ce:GetCostAndUsage
+                  - sqs:GetQueueAttributes
+                  - kms:Decrypt
+                Resource: "*"
+              - Sid: VerificationQueries
+                Effect: Allow
+                Action: [athena:StartQueryExecution, athena:StopQueryExecution]
+                Resource: !Sub arn:aws:athena:*:${AWS::AccountId}:workgroup/pmcp-*
+              - Sid: VerificationQueryResults
+                Effect: Allow
+                Action: [s3:PutObject, s3:AbortMultipartUpload]
+                Resource: arn:aws:s3:::pmcp-*/athena-results/*
+              - Sid: PrivateRepoTokens
+                Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !Sub arn:aws:secretsmanager:*:${AWS::AccountId}:secret:pmcp/*
+      Tags:
+        - {Key: managed-by, Value: pipeline-mcp}
+
+  CfnExecRole:
+    Type: AWS::IAM::Role
+    Condition: Deployer
+    Properties:
+      RoleName: pmcp-cfn-exec
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: {Service: cloudformation.amazonaws.com}
+            Action: sts:AssumeRole
+            Condition: {StringEquals: {aws:SourceAccount: !Ref AWS::AccountId}}
+      Policies:
+        - PolicyName: pmcp-provision
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: RolesOnlyWithBoundary
+                Effect: Allow
+                Action: [iam:CreateRole, iam:PutRolePermissionsBoundary]
+                Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/pmcp-*
+                Condition: {StringEquals: {iam:PermissionsBoundary: !Ref Boundary}}
+              - Sid: ManagePmcpRoles
+                Effect: Allow
+                Action:
+                  - iam:GetRole
+                  - iam:DeleteRole
+                  - iam:PutRolePolicy
+                  - iam:GetRolePolicy
+                  - iam:DeleteRolePolicy
+                  - iam:TagRole
+                  - iam:UntagRole
+                  - iam:UpdateAssumeRolePolicy
+                  - iam:ListRolePolicies
+                  - iam:ListAttachedRolePolicies
+                  - iam:PassRole
+                Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/pmcp-*
+              - Sid: NamedResources
+                Effect: Allow
+                Action: ["s3:*", "glue:*", "athena:*", "states:*", "scheduler:*", "kinesis:*", "firehose:*",
+                         "lambda:*", "dynamodb:*", "sns:*", "sqs:*", "logs:*", "cloudwatch:*"]
+                Resource:
+                  - arn:aws:s3:::pmcp-*
+                  - !Sub arn:aws:glue:*:${AWS::AccountId}:catalog
+                  - !Sub arn:aws:glue:*:${AWS::AccountId}:database/pmcp_*
+                  - !Sub arn:aws:glue:*:${AWS::AccountId}:table/pmcp_*/*
+                  # DeleteDatabase is also authorized against the database's function namespace.
+                  - !Sub arn:aws:glue:*:${AWS::AccountId}:userDefinedFunction/pmcp_*/*
+                  - !Sub arn:aws:glue:*:${AWS::AccountId}:job/pmcp-*
+                  - !Sub arn:aws:athena:*:${AWS::AccountId}:workgroup/pmcp-*
+                  - !Sub arn:aws:states:*:${AWS::AccountId}:stateMachine:pmcp-*
+                  - !Sub arn:aws:scheduler:*:${AWS::AccountId}:schedule/default/pmcp-*
+                  - !Sub arn:aws:kinesis:*:${AWS::AccountId}:stream/pmcp-*
+                  - !Sub arn:aws:firehose:*:${AWS::AccountId}:deliverystream/pmcp-*
+                  - !Sub arn:aws:lambda:*:${AWS::AccountId}:function:pmcp-*
+                  - !Sub arn:aws:dynamodb:*:${AWS::AccountId}:table/pmcp-*
+                  - !Sub arn:aws:sns:*:${AWS::AccountId}:pmcp-*
+                  - !Sub arn:aws:sqs:*:${AWS::AccountId}:pmcp-*
+                  - !Sub arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/lambda/pmcp-*
+                  - !Sub arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/kinesisfirehose/pmcp-*
+                  - !Sub arn:aws:cloudwatch:*:${AWS::AccountId}:alarm:pmcp-*
+              - Sid: ReadArtifacts
+                Effect: Allow
+                Action: [s3:GetObject, s3:GetObjectVersion]
+                Resource: arn:aws:s3:::pmcp-artifacts-*/*
+              - Sid: UnnamedOrDescribe
+                Effect: Allow
+                Action:
+                  - lambda:CreateEventSourceMapping
+                  - lambda:GetEventSourceMapping
+                  - lambda:UpdateEventSourceMapping
+                  - lambda:DeleteEventSourceMapping
+                  - lambda:ListEventSourceMappings
+                  - logs:DescribeLogGroups
+                  - logs:CreateLogDelivery
+                  - logs:GetLogDelivery
+                  - logs:UpdateLogDelivery
+                  - logs:DeleteLogDelivery
+                  - logs:ListLogDeliveries
+                  - states:ListStateMachines
+                  - kinesis:ListStreams
+                  - kinesis:DescribeStreamSummary
+                  - firehose:ListDeliveryStreams
+                  - kms:DescribeKey
+                  - kms:CreateGrant
+                  - kms:Decrypt
+                  - kms:GenerateDataKey
+                  - lakeformation:GrantPermissions
+                  - lakeformation:RevokePermissions
+                  - lakeformation:ListPermissions
+                  - glue:GetDatabases
+                  - athena:ListWorkGroups
+                  - sns:ListTopics
+                  - dynamodb:DescribeContinuousBackups
+                  - dynamodb:UpdateContinuousBackups
+                Resource: "*"
+      Tags:
+        - {Key: managed-by, Value: pipeline-mcp}
+
+  DeployerRole:
+    Type: AWS::IAM::Role
+    Condition: Deployer
+    Properties:
+      RoleName: pmcp-deployer
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: {AWS: !Ref PlatformPrincipalArns}
+            Action: sts:AssumeRole
+            Condition: {StringEquals: {sts:ExternalId: !Ref ExternalId}}
+      Policies:
+        - PolicyName: pmcp-deploy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: StacksViaExecRoleOnly
+                Effect: Allow
+                Action:
+                  - cloudformation:CreateChangeSet
+                  - cloudformation:ExecuteChangeSet
+                  - cloudformation:DeleteChangeSet
+                  - cloudformation:DescribeChangeSet
+                  - cloudformation:DeleteStack
+                  - cloudformation:DescribeStacks
+                  - cloudformation:DescribeStackEvents
+                  - cloudformation:GetTemplate
+                  - cloudformation:DetectStackDrift
+                  - cloudformation:DescribeStackResourceDrifts
+                Resource:
+                  - !Sub arn:aws:cloudformation:*:${AWS::AccountId}:stack/pmcp-*/*
+                  - !Sub arn:aws:cloudformation:*:${AWS::AccountId}:changeSet/pmcp-*/*
+              - Sid: DenyChangeSetsWithoutExecRole
+                Effect: Deny
+                Action: [cloudformation:CreateChangeSet, cloudformation:DeleteStack]
+                Resource: "*"
+                Condition:
+                  StringNotEquals: {cloudformation:RoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/pmcp-cfn-exec"}
+              - Sid: PassExecRole
+                Effect: Allow
+                Action: iam:PassRole
+                Resource: !GetAtt CfnExecRole.Arn
+              - Sid: Artifacts
+                Effect: Allow
+                Action: [s3:CreateBucket, s3:PutBucketTagging, s3:PutBucketPublicAccessBlock, s3:PutObject,
+                         s3:GetObject, s3:ListBucket, s3:GetBucketLocation]
+                Resource: [arn:aws:s3:::pmcp-artifacts-*, arn:aws:s3:::pmcp-artifacts-*/*]
+              - Sid: DataStepsOnPmcpResources
+                Effect: Allow
+                Action:
+                  - athena:StartQueryExecution
+                  - athena:GetQueryExecution
+                  - athena:GetQueryResults
+                  - athena:StopQueryExecution
+                  - athena:GetWorkGroup
+                  - glue:GetDatabase
+                  - glue:GetTable
+                  - glue:GetTables
+                  - glue:CreateTable
+                  - glue:UpdateTable
+                  - glue:DeleteTable
+                  - glue:GetPartitions
+                  - states:StartExecution
+                  - states:DescribeExecution
+                  - scheduler:GetSchedule
+                  - scheduler:UpdateSchedule
+                  - kinesis:PutRecords
+                  - kinesis:GetShardIterator
+                  - kinesis:GetRecords
+                  - kinesis:ListShards
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                  - s3:GetBucketLocation
+                  - s3:AbortMultipartUpload
+                  - lakeformation:GetDataAccess
+                Resource:
+                  - !Sub arn:aws:athena:*:${AWS::AccountId}:workgroup/pmcp-*
+                  - !Sub arn:aws:glue:*:${AWS::AccountId}:catalog
+                  - !Sub arn:aws:glue:*:${AWS::AccountId}:database/pmcp_*
+                  - !Sub arn:aws:glue:*:${AWS::AccountId}:table/pmcp_*/*
+                  - !Sub arn:aws:states:*:${AWS::AccountId}:stateMachine:pmcp-*
+                  - !Sub arn:aws:states:*:${AWS::AccountId}:execution:pmcp-*:*
+                  - !Sub arn:aws:scheduler:*:${AWS::AccountId}:schedule/default/pmcp-*
+                  - !Sub arn:aws:kinesis:*:${AWS::AccountId}:stream/pmcp-*
+                  - !Sub arn:aws:sqs:*:${AWS::AccountId}:pmcp-*
+                  - arn:aws:s3:::pmcp-*
+                  - arn:aws:s3:::pmcp-*/*
+              - Sid: PassScheduleRole
+                Effect: Allow
+                Action: iam:PassRole
+                Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/pmcp-*-sched
+              - Sid: ReadSourcesForDataSteps
+                Effect: Allow
+                Action: [s3:GetObject, s3:ListBucket, s3:GetBucketLocation]
+                Resource: "*"
+      Tags:
+        - {Key: managed-by, Value: pipeline-mcp}
+
+Outputs:
+  ReaderRoleArn:
+    Value: !GetAtt ReaderRole.Arn
+  DeployerRoleArn:
+    Condition: Deployer
+    Value: !GetAtt DeployerRole.Arn
+  CfnExecRoleArn:
+    Condition: Deployer
+    Value: !GetAtt CfnExecRole.Arn
+  BoundaryPolicyArn:
+    Value: !Ref Boundary
+  AllowedRegions:
+    Value: !Join [",", !Ref AllowedRegions]

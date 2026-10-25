@@ -1,0 +1,3425 @@
+[
+ {
+  "name": "list_workspace",
+  "title": "List connected accounts, flows, plans, operations",
+  "description": "Start here in a new session. Lists the caller's connected AWS accounts (with regions, write access and\n        cost caps), deployed flows, plans waiting for approval, recent operations and open incidents, so you can\n        find ids for the other tools. Reads pmcp state only; it does not call AWS (use inspect_aws_environment\n        for that).",
+  "input_schema": {
+   "type": "object",
+   "properties": {},
+   "title": "list_workspaceArguments"
+  },
+  "output_schema": {
+   "additionalProperties": false,
+   "properties": {
+    "accounts": {
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Accounts",
+     "type": "array"
+    },
+    "flows": {
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Flows",
+     "type": "array"
+    },
+    "pending_plans": {
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Pending Plans",
+     "type": "array"
+    },
+    "recent_operations": {
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Recent Operations",
+     "type": "array"
+    },
+    "open_incidents": {
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Open Incidents",
+     "type": "array"
+    },
+    "connect_url": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Connect Url"
+    }
+   },
+   "required": [
+    "accounts",
+    "flows",
+    "pending_plans",
+    "recent_operations",
+    "open_incidents",
+    "connect_url"
+   ],
+   "title": "Workspace",
+   "type": "object"
+  },
+  "annotations": {
+   "title": "List connected accounts, flows, plans, operations",
+   "read_only_hint": true,
+   "destructive_hint": false,
+   "idempotent_hint": false,
+   "open_world_hint": false
+  }
+ },
+ {
+  "name": "inspect_repository",
+  "title": "Scan producer code",
+  "description": "Find how the producer emits data: SDK calls that write to Kinesis/Firehose/S3/Kafka/SQS/DynamoDB/SQL\n        (file:line), resource names, likely event fields, schema and sample files, IaC resources. Use before\n        profile_source when the data's origin is code. Pattern matching only; confirm findings in the code.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "source": {
+     "description": "https:// git URL, or s3://bucket/key.(zip|tar.gz) in a connected account; a local directory only in local mode.",
+     "title": "Source",
+     "type": "string"
+    },
+    "ref": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Branch or tag; default branch if omitted.",
+     "title": "Ref"
+    },
+    "account_id": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Needed for s3:// archives or token_secret_arn.",
+     "title": "Account Id"
+    },
+    "region": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Region of the s3:// archive.",
+     "title": "Region"
+    },
+    "token_secret_arn": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Secrets Manager ARN (name pmcp/*) in the connected account holding a git token, for private repos.",
+     "title": "Token Secret Arn"
+    }
+   },
+   "required": [
+    "source"
+   ],
+   "title": "inspect_repositoryArguments"
+  },
+  "output_schema": {
+   "additionalProperties": false,
+   "properties": {
+    "source": {
+     "title": "Source",
+     "type": "string"
+    },
+    "ref": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Ref"
+    },
+    "files_scanned": {
+     "title": "Files Scanned",
+     "type": "integer"
+    },
+    "languages": {
+     "additionalProperties": {
+      "type": "integer"
+     },
+     "title": "Languages",
+     "type": "object"
+    },
+    "producer_calls": {
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Producer Calls",
+     "type": "array"
+    },
+    "iac_resources": {
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Iac Resources",
+     "type": "array"
+    },
+    "resource_name_hints": {
+     "additionalProperties": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "title": "Resource Name Hints",
+     "type": "object"
+    },
+    "candidate_event_fields": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Candidate Event Fields",
+     "type": "array"
+    },
+    "schema_files": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Schema Files",
+     "type": "array"
+    },
+    "sample_data_files": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Sample Data Files",
+     "type": "array"
+    },
+    "iac_files": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Iac Files",
+     "type": "array"
+    },
+    "notes": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Notes",
+     "type": "array"
+    },
+    "next_actions": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Next Actions",
+     "type": "array"
+    }
+   },
+   "required": [
+    "source",
+    "ref",
+    "files_scanned",
+    "languages",
+    "producer_calls",
+    "iac_resources",
+    "resource_name_hints",
+    "candidate_event_fields",
+    "schema_files",
+    "sample_data_files",
+    "iac_files",
+    "notes",
+    "next_actions"
+   ],
+   "title": "RepositoryReport",
+   "type": "object"
+  },
+  "annotations": {
+   "title": "Scan producer code",
+   "read_only_hint": true,
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": true
+  }
+ },
+ {
+  "name": "inspect_aws_environment",
+  "title": "Inventory an AWS account/region",
+  "description": "Inventory reusable resources in a connected account: S3 buckets, Glue tables, Kinesis/Firehose/MSK,\n        DynamoDB/RDS/OpenSearch, Redshift, Lambda/Glue jobs, Step Functions/schedules, Lake Formation mode\n        (decides lake_formation_grants) and existing pmcp stacks. Names and metadata only, no data. For data\n        shape and volume use profile_source.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "account_id": {
+     "description": "Connected AWS account id (see list_workspace).",
+     "pattern": "^\\d{12}$",
+     "title": "Account Id",
+     "type": "string"
+    },
+    "region": {
+     "description": "AWS region, e.g. ap-southeast-2.",
+     "pattern": "^[a-z]{2}(-gov)?-[a-z]+-\\d$",
+     "title": "Region",
+     "type": "string"
+    },
+    "categories": {
+     "anyOf": [
+      {
+       "items": {
+        "enum": [
+         "storage",
+         "catalog",
+         "streaming",
+         "databases",
+         "warehouses",
+         "compute",
+         "orchestration",
+         "governance",
+         "pmcp"
+        ],
+        "type": "string"
+       },
+       "type": "array"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Subset to inspect; all if omitted.",
+     "title": "Categories"
+    }
+   },
+   "required": [
+    "account_id",
+    "region"
+   ],
+   "title": "inspect_aws_environmentArguments"
+  },
+  "output_schema": {
+   "additionalProperties": false,
+   "properties": {
+    "account_id": {
+     "title": "Account Id",
+     "type": "string"
+    },
+    "region": {
+     "title": "Region",
+     "type": "string"
+    },
+    "inventory": {
+     "additionalProperties": true,
+     "title": "Inventory",
+     "type": "object"
+    },
+    "errors": {
+     "additionalProperties": {
+      "type": "string"
+     },
+     "description": "Per-category read failures (usually missing permissions).",
+     "title": "Errors",
+     "type": "object"
+    },
+    "next_actions": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Next Actions",
+     "type": "array"
+    }
+   },
+   "required": [
+    "account_id",
+    "region",
+    "inventory",
+    "errors",
+    "next_actions"
+   ],
+   "title": "EnvironmentReport",
+   "type": "object"
+  },
+  "annotations": {
+   "title": "Inventory an AWS account/region",
+   "read_only_hint": true,
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": true
+  }
+ },
+ {
+  "name": "profile_source",
+  "title": "Profile source data",
+  "description": "Measure a source: object counts/bytes per day (growth), formats, hive partitions, inferred columns and\n        types, null rates, key/event-time/delete-marker candidates, duplicates and newest event time, from a\n        bounded sample. Values are masked unless include_raw_samples=true. Output columns plug into\n        define_data_contract (sources[].columns) and pattern_params.source_columns.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "account_id": {
+     "description": "Connected AWS account id (see list_workspace).",
+     "pattern": "^\\d{12}$",
+     "title": "Account Id",
+     "type": "string"
+    },
+    "region": {
+     "description": "AWS region, e.g. ap-southeast-2.",
+     "pattern": "^[a-z]{2}(-gov)?-[a-z]+-\\d$",
+     "title": "Region",
+     "type": "string"
+    },
+    "source_uri": {
+     "description": "s3://bucket/prefix/, glue:<db>.<table>, kinesis:<stream> or dynamodb:<table>",
+     "title": "Source Uri",
+     "type": "string"
+    },
+    "sample_records": {
+     "default": 200,
+     "maximum": 2000,
+     "minimum": 10,
+     "title": "Sample Records",
+     "type": "integer"
+    },
+    "include_raw_samples": {
+     "default": false,
+     "description": "Return 5 unmasked records. Only when the user explicitly asks; default returns masked values.",
+     "title": "Include Raw Samples",
+     "type": "boolean"
+    }
+   },
+   "required": [
+    "account_id",
+    "region",
+    "source_uri"
+   ],
+   "title": "profile_sourceArguments"
+  },
+  "output_schema": {
+   "additionalProperties": false,
+   "properties": {
+    "source_uri": {
+     "title": "Source Uri",
+     "type": "string"
+    },
+    "profile": {
+     "additionalProperties": true,
+     "title": "Profile",
+     "type": "object"
+    },
+    "suggested_source_columns": {
+     "description": "Columns in contract form (name/type/nullable) inferred from the sample.",
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Suggested Source Columns",
+     "type": "array"
+    },
+    "next_actions": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Next Actions",
+     "type": "array"
+    }
+   },
+   "required": [
+    "source_uri",
+    "profile",
+    "suggested_source_columns",
+    "next_actions"
+   ],
+   "title": "SourceProfile",
+   "type": "object"
+  },
+  "annotations": {
+   "title": "Profile source data",
+   "read_only_hint": true,
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": true
+  }
+ },
+ {
+  "name": "inspect_consumer_contract",
+  "title": "Inspect what a consumer reads",
+  "description": "Look at the consumer side of an existing destination: current schema/partitions/format, newest data\n        time, whether a consumer principal can read it (IAM simulation), and differences from a contract. Use to\n        avoid breaking existing readers. Real reads with the flow's own consumer role happen in\n        verify_data_flow.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "account_id": {
+     "description": "Connected AWS account id (see list_workspace).",
+     "pattern": "^\\d{12}$",
+     "title": "Account Id",
+     "type": "string"
+    },
+    "region": {
+     "description": "AWS region, e.g. ap-southeast-2.",
+     "pattern": "^[a-z]{2}(-gov)?-[a-z]+-\\d$",
+     "title": "Region",
+     "type": "string"
+    },
+    "target": {
+     "description": "Existing destination: glue:<db>.<table> or dynamodb:<table>",
+     "title": "Target",
+     "type": "string"
+    },
+    "principal_arn": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "IAM role/user the consumer reads as; its access is simulated.",
+     "title": "Principal Arn"
+    },
+    "contract_id": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Compare the target schema with this contract.",
+     "title": "Contract Id"
+    }
+   },
+   "required": [
+    "account_id",
+    "region",
+    "target"
+   ],
+   "title": "inspect_consumer_contractArguments"
+  },
+  "output_schema": {
+   "additionalProperties": false,
+   "properties": {
+    "target": {
+     "title": "Target",
+     "type": "string"
+    },
+    "report": {
+     "additionalProperties": true,
+     "title": "Report",
+     "type": "object"
+    },
+    "next_actions": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Next Actions",
+     "type": "array"
+    }
+   },
+   "required": [
+    "target",
+    "report",
+    "next_actions"
+   ],
+   "title": "ConsumerReport",
+   "type": "object"
+  },
+  "annotations": {
+   "title": "Inspect what a consumer reads",
+   "read_only_hint": true,
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": true
+  }
+ },
+ {
+  "name": "define_data_contract",
+  "title": "Save the agreed data contract",
+  "description": "Store the requirements agreed with the user as a versioned contract: sources, output dataset schema,\n        key and upsert/delete semantics, freshness, transform complexity, volume, consumers, quality rules,\n        reprocessing window and cost cap. Every design/change/verify tool reads the contract by id instead of\n        free-form JSON. Re-sending an identical body returns the same version. Writes pmcp state only (no AWS).",
+  "input_schema": {
+   "type": "object",
+   "$defs": {
+    "Column": {
+     "additionalProperties": false,
+     "properties": {
+      "name": {
+       "pattern": "^[a-z][a-z0-9_]{0,62}$",
+       "title": "Name",
+       "type": "string"
+      },
+      "type": {
+       "enum": [
+        "string",
+        "int",
+        "bigint",
+        "double",
+        "decimal(18,2)",
+        "decimal(38,9)",
+        "boolean",
+        "date",
+        "timestamp"
+       ],
+       "title": "Type",
+       "type": "string"
+      },
+      "nullable": {
+       "default": true,
+       "title": "Nullable",
+       "type": "boolean"
+      },
+      "description": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Description"
+      }
+     },
+     "required": [
+      "name",
+      "type"
+     ],
+     "title": "Column",
+     "type": "object"
+    },
+    "Consumer": {
+     "additionalProperties": false,
+     "properties": {
+      "name": {
+       "title": "Name",
+       "type": "string"
+      },
+      "access": {
+       "enum": [
+        "sql_analytics",
+        "key_lookup",
+        "search",
+        "file_export",
+        "stream",
+        "other"
+       ],
+       "title": "Access",
+       "type": "string"
+      },
+      "principal_arn": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "description": "Existing IAM principal that must be able to read, if any.",
+       "title": "Principal Arn"
+      },
+      "query_latency_ms": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "description": "p95 read latency the consumer needs, if known.",
+       "title": "Query Latency Ms"
+      },
+      "notes": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Notes"
+      }
+     },
+     "required": [
+      "name",
+      "access"
+     ],
+     "title": "Consumer",
+     "type": "object"
+    },
+    "DataContractBody": {
+     "additionalProperties": false,
+     "properties": {
+      "title": {
+       "maxLength": 120,
+       "title": "Title",
+       "type": "string"
+      },
+      "sources": {
+       "items": {
+        "$ref": "#/$defs/SourceDescriptor"
+       },
+       "minItems": 1,
+       "title": "Sources",
+       "type": "array"
+      },
+      "output": {
+       "$ref": "#/$defs/OutputDataset"
+      },
+      "mutation": {
+       "$ref": "#/$defs/Mutation"
+      },
+      "freshness": {
+       "$ref": "#/$defs/Freshness"
+      },
+      "transform": {
+       "$ref": "#/$defs/TransformProfile"
+      },
+      "volume": {
+       "$ref": "#/$defs/Volume"
+      },
+      "consumers": {
+       "items": {
+        "$ref": "#/$defs/Consumer"
+       },
+       "minItems": 1,
+       "title": "Consumers",
+       "type": "array"
+      },
+      "quality": {
+       "items": {
+        "$ref": "#/$defs/QualityRule"
+       },
+       "title": "Quality",
+       "type": "array"
+      },
+      "reprocessing_window_days": {
+       "anyOf": [
+        {
+         "minimum": 1,
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "description": "How far back the flow must be able to rebuild output from source.",
+       "title": "Reprocessing Window Days"
+      },
+      "monthly_cost_cap_usd": {
+       "anyOf": [
+        {
+         "exclusiveMinimum": 0,
+         "type": "number"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Monthly Cost Cap Usd"
+      },
+      "existing_resources_to_reuse": {
+       "description": "ARNs/URIs the user wants reused (e.g. an existing stream or warehouse).",
+       "items": {
+        "type": "string"
+       },
+       "title": "Existing Resources To Reuse",
+       "type": "array"
+      },
+      "network_notes": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Network Notes"
+      }
+     },
+     "required": [
+      "title",
+      "sources",
+      "output",
+      "freshness",
+      "consumers"
+     ],
+     "title": "DataContractBody",
+     "type": "object"
+    },
+    "Freshness": {
+     "additionalProperties": false,
+     "properties": {
+      "max_lag_seconds": {
+       "description": "Max age of the newest source record not yet visible to consumers.",
+       "minimum": 1,
+       "title": "Max Lag Seconds",
+       "type": "integer"
+      },
+      "measured_on": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "description": "Output column holding event time; defaults to source event time.",
+       "title": "Measured On"
+      }
+     },
+     "required": [
+      "max_lag_seconds"
+     ],
+     "title": "Freshness",
+     "type": "object"
+    },
+    "Mutation": {
+     "additionalProperties": false,
+     "properties": {
+      "mode": {
+       "default": "append",
+       "enum": [
+        "append",
+        "upsert",
+        "upsert_with_deletes"
+       ],
+       "title": "Mode",
+       "type": "string"
+      },
+      "key": {
+       "description": "Output primary key; required unless mode=append.",
+       "items": {
+        "type": "string"
+       },
+       "title": "Key",
+       "type": "array"
+      },
+      "ordering_column": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "description": "Column that orders versions of the same key (latest wins). Required for upsert modes.",
+       "title": "Ordering Column"
+      },
+      "duplicates": {
+       "default": "latest_per_key",
+       "enum": [
+        "allowed",
+        "drop_exact",
+        "latest_per_key"
+       ],
+       "title": "Duplicates",
+       "type": "string"
+      }
+     },
+     "title": "Mutation",
+     "type": "object"
+    },
+    "OutputDataset": {
+     "additionalProperties": false,
+     "properties": {
+      "name": {
+       "pattern": "^[a-z][a-z0-9_]{0,62}$",
+       "title": "Name",
+       "type": "string"
+      },
+      "columns": {
+       "items": {
+        "$ref": "#/$defs/Column"
+       },
+       "minItems": 1,
+       "title": "Columns",
+       "type": "array"
+      },
+      "partition_by": {
+       "items": {
+        "type": "string"
+       },
+       "title": "Partition By",
+       "type": "array"
+      }
+     },
+     "required": [
+      "name",
+      "columns"
+     ],
+     "title": "OutputDataset",
+     "type": "object"
+    },
+    "QualityRule": {
+     "additionalProperties": false,
+     "properties": {
+      "kind": {
+       "enum": [
+        "not_null",
+        "unique",
+        "accepted_values",
+        "range",
+        "row_count_between",
+        "custom_sql"
+       ],
+       "title": "Kind",
+       "type": "string"
+      },
+      "column": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Column"
+      },
+      "values": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "string"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Values"
+      },
+      "min": {
+       "anyOf": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Min"
+      },
+      "max": {
+       "anyOf": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Max"
+      },
+      "sql": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "description": "custom_sql: a read-only SELECT returning one row with column `violations` (0 = pass).",
+       "title": "Sql"
+      },
+      "severity": {
+       "default": "error",
+       "enum": [
+        "error",
+        "warn"
+       ],
+       "title": "Severity",
+       "type": "string"
+      }
+     },
+     "required": [
+      "kind"
+     ],
+     "title": "QualityRule",
+     "type": "object"
+    },
+    "SourceDescriptor": {
+     "additionalProperties": false,
+     "description": "Where the input lives. `uri` forms: s3://bucket/prefix/, kinesis:<stream-name>, glue:<db>.<table>,\ndynamodb:<table>, rds:<identifier>, redshift:<workgroup-or-cluster>.<db>.<schema>.<table>, kafka:<cluster>/<topic>,\napp:<free text, producer not yet emitting anywhere>.",
+     "properties": {
+      "name": {
+       "pattern": "^[a-z][a-z0-9_]{0,62}$",
+       "title": "Name",
+       "type": "string"
+      },
+      "uri": {
+       "title": "Uri",
+       "type": "string"
+      },
+      "format": {
+       "default": "unknown",
+       "enum": [
+        "jsonl",
+        "json",
+        "csv",
+        "parquet",
+        "avro",
+        "records",
+        "unknown"
+       ],
+       "title": "Format",
+       "type": "string"
+      },
+      "columns": {
+       "description": "Source fields as profiled; may be empty.",
+       "items": {
+        "$ref": "#/$defs/Column"
+       },
+       "title": "Columns",
+       "type": "array"
+      },
+      "event_time_column": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Event Time Column"
+      },
+      "change_marker": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "description": "Column that marks a delete/tombstone record (boolean true = deleted).",
+       "title": "Change Marker"
+      }
+     },
+     "required": [
+      "name",
+      "uri"
+     ],
+     "title": "SourceDescriptor",
+     "type": "object"
+    },
+    "TransformProfile": {
+     "additionalProperties": false,
+     "description": "How hard the transformation is. The agent fills this from the requirements; the server uses it for\ncandidate fitness only.",
+     "properties": {
+      "expressible_in_sql": {
+       "default": true,
+       "title": "Expressible In Sql",
+       "type": "boolean"
+      },
+      "joins": {
+       "default": 0,
+       "minimum": 0,
+       "title": "Joins",
+       "type": "integer"
+      },
+      "join_sources_outside_flow": {
+       "default": false,
+       "title": "Join Sources Outside Flow",
+       "type": "boolean"
+      },
+      "stateful_streaming": {
+       "default": false,
+       "description": "Windows/sessions over unbounded streams.",
+       "title": "Stateful Streaming",
+       "type": "boolean"
+      },
+      "custom_code_needed": {
+       "default": false,
+       "title": "Custom Code Needed",
+       "type": "boolean"
+      },
+      "rules": {
+       "description": "Plain-language processing rules, in order.",
+       "items": {
+        "type": "string"
+       },
+       "title": "Rules",
+       "type": "array"
+      }
+     },
+     "title": "TransformProfile",
+     "type": "object"
+    },
+    "Volume": {
+     "additionalProperties": false,
+     "properties": {
+      "records_per_day": {
+       "anyOf": [
+        {
+         "minimum": 0,
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Records Per Day"
+      },
+      "bytes_per_day": {
+       "anyOf": [
+        {
+         "minimum": 0,
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Bytes Per Day"
+      },
+      "peak_records_per_second": {
+       "anyOf": [
+        {
+         "minimum": 0,
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Peak Records Per Second"
+      },
+      "growth_percent_per_month": {
+       "anyOf": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Growth Percent Per Month"
+      },
+      "retention_days": {
+       "anyOf": [
+        {
+         "minimum": 1,
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Retention Days"
+      }
+     },
+     "title": "Volume",
+     "type": "object"
+    }
+   },
+   "properties": {
+    "contract": {
+     "$ref": "#/$defs/DataContractBody"
+    },
+    "contract_id": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Omit to create; give to add a new version.",
+     "title": "Contract Id"
+    },
+    "expected_version": {
+     "anyOf": [
+      {
+       "type": "integer"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Latest version you read; guards concurrent edits.",
+     "title": "Expected Version"
+    }
+   },
+   "required": [
+    "contract"
+   ],
+   "title": "define_data_contractArguments"
+  },
+  "output_schema": {
+   "additionalProperties": false,
+   "properties": {
+    "contract_id": {
+     "title": "Contract Id",
+     "type": "string"
+    },
+    "contract_version": {
+     "title": "Contract Version",
+     "type": "integer"
+    },
+    "created_new_version": {
+     "title": "Created New Version",
+     "type": "boolean"
+    },
+    "derived_requirements": {
+     "additionalProperties": true,
+     "title": "Derived Requirements",
+     "type": "object"
+    },
+    "next_actions": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Next Actions",
+     "type": "array"
+    }
+   },
+   "required": [
+    "contract_id",
+    "contract_version",
+    "created_new_version",
+    "derived_requirements",
+    "next_actions"
+   ],
+   "title": "ContractResult",
+   "type": "object"
+  },
+  "annotations": {
+   "title": "Save the agreed data contract",
+   "read_only_hint": false,
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false
+  }
+ },
+ {
+  "name": "list_capabilities",
+  "title": "List patterns, adapters, statuses",
+  "description": "List the architecture patterns pmcp knows, their components, adapter_status (implemented vs\n        catalog_only) and integration status (aws_verified / mock_tested / not_verified, with evidence). With\n        pattern_id, also returns the JSON schema for that pattern's pattern_params. Catalog knowledge only: for\n        fitness against a contract use validate_architecture.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "category": {
+     "anyOf": [
+      {
+       "enum": [
+        "ingest",
+        "transform",
+        "store",
+        "orchestrate",
+        "monitor"
+       ],
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Filter by component category.",
+     "title": "Category"
+    },
+    "pattern_id": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Return one pattern with its params_schema.",
+     "title": "Pattern Id"
+    }
+   },
+   "title": "list_capabilitiesArguments"
+  },
+  "output_schema": {
+   "additionalProperties": false,
+   "properties": {
+    "patterns": {
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Patterns",
+     "type": "array"
+    },
+    "services": {
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Services",
+     "type": "array"
+    },
+    "status_legend": {
+     "additionalProperties": {
+      "type": "string"
+     },
+     "title": "Status Legend",
+     "type": "object"
+    },
+    "hint": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Hint"
+    }
+   },
+   "required": [
+    "patterns",
+    "services",
+    "status_legend",
+    "hint"
+   ],
+   "title": "Capabilities",
+   "type": "object"
+  },
+  "annotations": {
+   "title": "List patterns, adapters, statuses",
+   "read_only_hint": true,
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false
+  }
+ },
+ {
+  "name": "get_service_constraints",
+  "title": "Service limits and availability",
+  "description": "Facts about specific services: latency floor, delivery semantics, documented limits, strengths and\n        weaknesses, region availability, and (with account_id) live quota values. Use when a requirement is near\n        a limit (throughput, record size, run time). Does not judge a whole architecture (validate_architecture\n        does).",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "services": {
+     "description": "service_ids from list_capabilities, e.g. athena, firehose, dynamodb",
+     "items": {
+      "type": "string"
+     },
+     "minItems": 1,
+     "title": "Services",
+     "type": "array"
+    },
+    "region": {
+     "description": "AWS region, e.g. ap-southeast-2.",
+     "pattern": "^[a-z]{2}(-gov)?-[a-z]+-\\d$",
+     "title": "Region",
+     "type": "string"
+    },
+    "account_id": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Adds live Service Quotas values for this account.",
+     "title": "Account Id"
+    }
+   },
+   "required": [
+    "services",
+    "region"
+   ],
+   "title": "get_service_constraintsArguments"
+  },
+  "output_schema": {
+   "additionalProperties": false,
+   "properties": {
+    "region": {
+     "title": "Region",
+     "type": "string"
+    },
+    "services": {
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Services",
+     "type": "array"
+    }
+   },
+   "required": [
+    "region",
+    "services"
+   ],
+   "title": "ServiceConstraints",
+   "type": "object"
+  },
+  "annotations": {
+   "title": "Service limits and availability",
+   "read_only_hint": true,
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": true
+  }
+ },
+ {
+  "name": "estimate_cost",
+  "title": "Estimate monthly cost",
+  "description": "Monthly cost estimate for one implemented pattern with concrete params, from the contract's volume:\n        line items with unit prices and where each price came from (Price List API or dated static table),\n        assumptions and confidence. prepare_changes includes the same estimate; use this to compare options\n        before preparing a plan.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "contract_id": {
+     "title": "Contract Id",
+     "type": "string"
+    },
+    "pattern_id": {
+     "title": "Pattern Id",
+     "type": "string"
+    },
+    "pattern_params": {
+     "additionalProperties": true,
+     "title": "Pattern Params",
+     "type": "object"
+    },
+    "region": {
+     "description": "AWS region, e.g. ap-southeast-2.",
+     "pattern": "^[a-z]{2}(-gov)?-[a-z]+-\\d$",
+     "title": "Region",
+     "type": "string"
+    },
+    "contract_version": {
+     "anyOf": [
+      {
+       "type": "integer"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Contract Version"
+    }
+   },
+   "required": [
+    "contract_id",
+    "pattern_id",
+    "pattern_params",
+    "region"
+   ],
+   "title": "estimate_costArguments"
+  },
+  "output_schema": {
+   "additionalProperties": false,
+   "properties": {
+    "pattern_id": {
+     "title": "Pattern Id",
+     "type": "string"
+    },
+    "region": {
+     "title": "Region",
+     "type": "string"
+    },
+    "contract": {
+     "items": {},
+     "title": "Contract",
+     "type": "array"
+    },
+    "monthly_usd": {
+     "title": "Monthly Usd",
+     "type": "number"
+    },
+    "one_off_usd": {
+     "title": "One Off Usd",
+     "type": "number"
+    },
+    "lines": {
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Lines",
+     "type": "array"
+    },
+    "assumptions": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Assumptions",
+     "type": "array"
+    },
+    "confidence": {
+     "title": "Confidence",
+     "type": "string"
+    },
+    "note": {
+     "title": "Note",
+     "type": "string"
+    }
+   },
+   "required": [
+    "pattern_id",
+    "region",
+    "contract",
+    "monthly_usd",
+    "one_off_usd",
+    "lines",
+    "assumptions",
+    "confidence",
+    "note"
+   ],
+   "title": "CostResult",
+   "type": "object"
+  },
+  "annotations": {
+   "title": "Estimate monthly cost",
+   "read_only_hint": true,
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": true
+  }
+ },
+ {
+  "name": "validate_architecture",
+  "title": "Compare candidate architectures",
+  "description": "Judge your candidate patterns against the contract. For each: requirement fitness (strong/acceptable/\n        weak/unsuitable with reasons, blockers, unknowns), adapter status, integration status, params validity,\n        cost, and deployable_now with blockers. Reports best_fit and best_deployable_now separately and lists\n        better-fitting patterns you did not propose. Never treats 'implemented' as 'best'.",
+  "input_schema": {
+   "type": "object",
+   "$defs": {
+    "Candidate": {
+     "additionalProperties": false,
+     "properties": {
+      "pattern_id": {
+       "title": "Pattern Id",
+       "type": "string"
+      },
+      "pattern_params": {
+       "anyOf": [
+        {
+         "additionalProperties": true,
+         "type": "object"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "description": "Omit to judge fitness only.",
+       "title": "Pattern Params"
+      }
+     },
+     "required": [
+      "pattern_id"
+     ],
+     "title": "Candidate",
+     "type": "object"
+    }
+   },
+   "properties": {
+    "contract_id": {
+     "title": "Contract Id",
+     "type": "string"
+    },
+    "candidates": {
+     "items": {
+      "$ref": "#/$defs/Candidate"
+     },
+     "maxItems": 8,
+     "minItems": 1,
+     "title": "Candidates",
+     "type": "array"
+    },
+    "account_id": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Check deployability in this account.",
+     "title": "Account Id"
+    },
+    "region": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Region for availability and cost.",
+     "title": "Region"
+    },
+    "contract_version": {
+     "anyOf": [
+      {
+       "type": "integer"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Contract Version"
+    }
+   },
+   "required": [
+    "contract_id",
+    "candidates"
+   ],
+   "title": "validate_architectureArguments"
+  },
+  "output_schema": {
+   "additionalProperties": false,
+   "properties": {
+    "requirements": {
+     "additionalProperties": true,
+     "title": "Requirements",
+     "type": "object"
+    },
+    "candidates": {
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Candidates",
+     "type": "array"
+    },
+    "best_fit": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Best Fit"
+    },
+    "best_deployable_now": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Best Deployable Now"
+    },
+    "better_fit_not_proposed": {
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Better Fit Not Proposed",
+     "type": "array"
+    },
+    "notes": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Notes",
+     "type": "array"
+    },
+    "next_actions": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Next Actions",
+     "type": "array"
+    }
+   },
+   "required": [
+    "requirements",
+    "candidates",
+    "best_fit",
+    "best_deployable_now",
+    "better_fit_not_proposed",
+    "notes",
+    "next_actions"
+   ],
+   "title": "ArchitectureValidation",
+   "type": "object"
+  },
+  "annotations": {
+   "title": "Compare candidate architectures",
+   "read_only_hint": true,
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": true
+  }
+ },
+ {
+  "name": "prepare_changes",
+  "title": "Create a change plan",
+  "description": "Build a reviewable plan for a new or existing flow, without touching AWS resources: target\n        account/region/stack, current vs desired state, CloudFormation resource diff, code/SQL diffs, data and\n        consumer impact, reprocessing need and window, cost, ordered steps with preconditions and failure\n        handling. Rejects unsupported parameter combinations. Next: preview_changes.",
+  "input_schema": {
+   "type": "object",
+   "$defs": {
+    "ReprocessRequest": {
+     "additionalProperties": false,
+     "properties": {
+      "mode": {
+       "default": "auto",
+       "description": "auto: reprocess when the adapter says the change requires it, over the contract's reprocessing_window_days (default 7) ending now. none: never. window: use start/end.",
+       "enum": [
+        "auto",
+        "none",
+        "window"
+       ],
+       "title": "Mode",
+       "type": "string"
+      },
+      "start": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Start"
+      },
+      "end": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "End"
+      }
+     },
+     "title": "ReprocessRequest",
+     "type": "object"
+    }
+   },
+   "properties": {
+    "account_id": {
+     "description": "Connected AWS account id (see list_workspace).",
+     "pattern": "^\\d{12}$",
+     "title": "Account Id",
+     "type": "string"
+    },
+    "region": {
+     "description": "AWS region, e.g. ap-southeast-2.",
+     "pattern": "^[a-z]{2}(-gov)?-[a-z]+-\\d$",
+     "title": "Region",
+     "type": "string"
+    },
+    "contract_id": {
+     "title": "Contract Id",
+     "type": "string"
+    },
+    "pattern_id": {
+     "title": "Pattern Id",
+     "type": "string"
+    },
+    "pattern_params": {
+     "additionalProperties": true,
+     "description": "Per list_capabilities(pattern_id).params_schema",
+     "title": "Pattern Params",
+     "type": "object"
+    },
+    "flow_id": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Existing flow to modify; omit for a new flow.",
+     "title": "Flow Id"
+    },
+    "flow_name": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Flow Name"
+    },
+    "change_reason": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Change Reason"
+    },
+    "contract_version": {
+     "anyOf": [
+      {
+       "type": "integer"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Contract Version"
+    },
+    "reprocess": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/ReprocessRequest"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Reprocessing of existing data for modifications; default auto."
+    }
+   },
+   "required": [
+    "account_id",
+    "region",
+    "contract_id",
+    "pattern_id",
+    "pattern_params"
+   ],
+   "title": "prepare_changesArguments"
+  },
+  "output_schema": {
+   "additionalProperties": false,
+   "properties": {
+    "plan_id": {
+     "title": "Plan Id",
+     "type": "string"
+    },
+    "kind": {
+     "title": "Kind",
+     "type": "string"
+    },
+    "status": {
+     "title": "Status",
+     "type": "string"
+    },
+    "summary": {
+     "title": "Summary",
+     "type": "string"
+    },
+    "account_id": {
+     "title": "Account Id",
+     "type": "string"
+    },
+    "region": {
+     "title": "Region",
+     "type": "string"
+    },
+    "flow_id": {
+     "title": "Flow Id",
+     "type": "string"
+    },
+    "stack_name": {
+     "title": "Stack Name",
+     "type": "string"
+    },
+    "pattern_id": {
+     "title": "Pattern Id",
+     "type": "string"
+    },
+    "contract": {
+     "items": {},
+     "title": "Contract",
+     "type": "array"
+    },
+    "change_reason": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Change Reason"
+    },
+    "current_state": {
+     "additionalProperties": true,
+     "title": "Current State",
+     "type": "object"
+    },
+    "desired_state": {
+     "additionalProperties": true,
+     "title": "Desired State",
+     "type": "object"
+    },
+    "resource_changes": {
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Resource Changes",
+     "type": "array"
+    },
+    "code_diffs": {
+     "items": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "type": "object"
+     },
+     "title": "Code Diffs",
+     "type": "array"
+    },
+    "artifacts": {
+     "description": "name/kind/sha256/size; content omitted.",
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Artifacts",
+     "type": "array"
+    },
+    "data_impact": {
+     "additionalProperties": true,
+     "title": "Data Impact",
+     "type": "object"
+    },
+    "cost": {
+     "anyOf": [
+      {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Cost"
+    },
+    "steps": {
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Steps",
+     "type": "array"
+    },
+    "warnings": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Warnings",
+     "type": "array"
+    },
+    "change_set": {
+     "anyOf": [
+      {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Change Set"
+    },
+    "plan_digest": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Plan Digest"
+    },
+    "expires_at": {
+     "title": "Expires At",
+     "type": "string"
+    },
+    "approval": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "description": "Where a person approves this plan (never via an MCP tool).",
+     "title": "Approval"
+    },
+    "next_actions": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Next Actions",
+     "type": "array"
+    }
+   },
+   "required": [
+    "plan_id",
+    "kind",
+    "status",
+    "summary",
+    "account_id",
+    "region",
+    "flow_id",
+    "stack_name",
+    "pattern_id",
+    "contract",
+    "change_reason",
+    "current_state",
+    "desired_state",
+    "resource_changes",
+    "code_diffs",
+    "artifacts",
+    "data_impact",
+    "cost",
+    "steps",
+    "warnings",
+    "change_set",
+    "plan_digest",
+    "expires_at",
+    "approval",
+    "next_actions"
+   ],
+   "title": "PlanView",
+   "type": "object"
+  },
+  "annotations": {
+   "title": "Create a change plan",
+   "read_only_hint": false,
+   "destructive_hint": false,
+   "idempotent_hint": false,
+   "open_world_hint": true
+  }
+ },
+ {
+  "name": "preview_changes",
+  "title": "Create change set and get approval link",
+  "description": "Turn a draft plan into an exact, approvable artifact: uploads code artifacts to the account's pmcp\n        artifacts bucket, creates a CloudFormation change set (no resources change yet), records the real\n        resource changes/replacements, and returns plan_digest plus the approval link. Show the user the\n        summary and link; a person must approve outside MCP. Fails with STALE_STATE if the target changed.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "plan_id": {
+     "title": "Plan Id",
+     "type": "string"
+    }
+   },
+   "required": [
+    "plan_id"
+   ],
+   "title": "preview_changesArguments"
+  },
+  "output_schema": {
+   "additionalProperties": false,
+   "properties": {
+    "plan_id": {
+     "title": "Plan Id",
+     "type": "string"
+    },
+    "kind": {
+     "title": "Kind",
+     "type": "string"
+    },
+    "status": {
+     "title": "Status",
+     "type": "string"
+    },
+    "summary": {
+     "title": "Summary",
+     "type": "string"
+    },
+    "account_id": {
+     "title": "Account Id",
+     "type": "string"
+    },
+    "region": {
+     "title": "Region",
+     "type": "string"
+    },
+    "flow_id": {
+     "title": "Flow Id",
+     "type": "string"
+    },
+    "stack_name": {
+     "title": "Stack Name",
+     "type": "string"
+    },
+    "pattern_id": {
+     "title": "Pattern Id",
+     "type": "string"
+    },
+    "contract": {
+     "items": {},
+     "title": "Contract",
+     "type": "array"
+    },
+    "change_reason": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Change Reason"
+    },
+    "current_state": {
+     "additionalProperties": true,
+     "title": "Current State",
+     "type": "object"
+    },
+    "desired_state": {
+     "additionalProperties": true,
+     "title": "Desired State",
+     "type": "object"
+    },
+    "resource_changes": {
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Resource Changes",
+     "type": "array"
+    },
+    "code_diffs": {
+     "items": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "type": "object"
+     },
+     "title": "Code Diffs",
+     "type": "array"
+    },
+    "artifacts": {
+     "description": "name/kind/sha256/size; content omitted.",
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Artifacts",
+     "type": "array"
+    },
+    "data_impact": {
+     "additionalProperties": true,
+     "title": "Data Impact",
+     "type": "object"
+    },
+    "cost": {
+     "anyOf": [
+      {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Cost"
+    },
+    "steps": {
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Steps",
+     "type": "array"
+    },
+    "warnings": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Warnings",
+     "type": "array"
+    },
+    "change_set": {
+     "anyOf": [
+      {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Change Set"
+    },
+    "plan_digest": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Plan Digest"
+    },
+    "expires_at": {
+     "title": "Expires At",
+     "type": "string"
+    },
+    "approval": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "description": "Where a person approves this plan (never via an MCP tool).",
+     "title": "Approval"
+    },
+    "next_actions": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Next Actions",
+     "type": "array"
+    }
+   },
+   "required": [
+    "plan_id",
+    "kind",
+    "status",
+    "summary",
+    "account_id",
+    "region",
+    "flow_id",
+    "stack_name",
+    "pattern_id",
+    "contract",
+    "change_reason",
+    "current_state",
+    "desired_state",
+    "resource_changes",
+    "code_diffs",
+    "artifacts",
+    "data_impact",
+    "cost",
+    "steps",
+    "warnings",
+    "change_set",
+    "plan_digest",
+    "expires_at",
+    "approval",
+    "next_actions"
+   ],
+   "title": "PlanView",
+   "type": "object"
+  },
+  "annotations": {
+   "title": "Create change set and get approval link",
+   "read_only_hint": false,
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": true
+  }
+ },
+ {
+  "name": "apply_changes",
+  "title": "Execute an approved change plan",
+  "description": "Execute exactly the approved plan as a background operation and return operation_id. Refuses unless a\n        person approved this digest, the plan has not expired, the target has not changed since review, the\n        change set is still available, and limits/cost cap allow it. Same idempotency_key returns or resumes the\n        same operation. Success means deployed, not verified: run verify_data_flow afterwards.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "plan_id": {
+     "title": "Plan Id",
+     "type": "string"
+    },
+    "plan_digest": {
+     "title": "Plan Digest",
+     "type": "string"
+    },
+    "idempotency_key": {
+     "description": "Caller-chosen key; re-sending the same key returns (or resumes) the same operation.",
+     "maxLength": 128,
+     "minLength": 8,
+     "title": "Idempotency Key",
+     "type": "string"
+    }
+   },
+   "required": [
+    "plan_id",
+    "plan_digest",
+    "idempotency_key"
+   ],
+   "title": "apply_changesArguments"
+  },
+  "output_schema": {
+   "additionalProperties": false,
+   "properties": {
+    "operation_id": {
+     "title": "Operation Id",
+     "type": "string"
+    },
+    "kind": {
+     "title": "Kind",
+     "type": "string"
+    },
+    "status": {
+     "title": "Status",
+     "type": "string"
+    },
+    "stalled": {
+     "description": "Running/queued but no live worker; re-call the start tool with the same idempotency_key to resume.",
+     "title": "Stalled",
+     "type": "boolean"
+    },
+    "flow_id": {
+     "title": "Flow Id",
+     "type": "string"
+    },
+    "plan_id": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Plan Id"
+    },
+    "steps": {
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Steps",
+     "type": "array"
+    },
+    "result": {
+     "additionalProperties": true,
+     "title": "Result",
+     "type": "object"
+    },
+    "error": {
+     "anyOf": [
+      {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Error"
+    },
+    "verification": {
+     "anyOf": [
+      {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Verification"
+    },
+    "created_at": {
+     "title": "Created At",
+     "type": "string"
+    },
+    "updated_at": {
+     "title": "Updated At",
+     "type": "string"
+    },
+    "next_actions": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Next Actions",
+     "type": "array"
+    }
+   },
+   "required": [
+    "operation_id",
+    "kind",
+    "status",
+    "stalled",
+    "flow_id",
+    "plan_id",
+    "steps",
+    "result",
+    "error",
+    "created_at",
+    "updated_at",
+    "next_actions"
+   ],
+   "title": "OperationView",
+   "type": "object"
+  },
+  "annotations": {
+   "title": "Execute an approved change plan",
+   "read_only_hint": false,
+   "destructive_hint": true,
+   "idempotent_hint": true,
+   "open_world_hint": true
+  }
+ },
+ {
+  "name": "verify_data_flow",
+  "title": "Verify data against the contract",
+  "description": "Check the destination data itself, not job status: existence, schema/types, key uniqueness, expected\n        vs actual rows for the window, updates/deletes applied, freshness and progress vs source, contract\n        quality rules, and a real read as the flow's consumer role. Runs as an operation; get_operation returns\n        each check as passed/failed/unverified with window, expected, observed and evidence.",
+  "input_schema": {
+   "type": "object",
+   "$defs": {
+    "Window": {
+     "additionalProperties": false,
+     "properties": {
+      "start": {
+       "description": "ISO-8601 UTC, inclusive, e.g. 2026-10-25T00:00:00Z",
+       "title": "Start",
+       "type": "string"
+      },
+      "end": {
+       "description": "ISO-8601 UTC, exclusive",
+       "title": "End",
+       "type": "string"
+      }
+     },
+     "required": [
+      "start",
+      "end"
+     ],
+     "title": "Window",
+     "type": "object"
+    }
+   },
+   "properties": {
+    "flow_id": {
+     "title": "Flow Id",
+     "type": "string"
+    },
+    "window": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/Window"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Data window to check; default: the last completed run window (batch) or the last hour (streaming)."
+    },
+    "idempotency_key": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Re-send to get the same verification operation.",
+     "title": "Idempotency Key"
+    }
+   },
+   "required": [
+    "flow_id"
+   ],
+   "title": "verify_data_flowArguments"
+  },
+  "output_schema": {
+   "additionalProperties": false,
+   "properties": {
+    "operation_id": {
+     "title": "Operation Id",
+     "type": "string"
+    },
+    "kind": {
+     "title": "Kind",
+     "type": "string"
+    },
+    "status": {
+     "title": "Status",
+     "type": "string"
+    },
+    "stalled": {
+     "description": "Running/queued but no live worker; re-call the start tool with the same idempotency_key to resume.",
+     "title": "Stalled",
+     "type": "boolean"
+    },
+    "flow_id": {
+     "title": "Flow Id",
+     "type": "string"
+    },
+    "plan_id": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Plan Id"
+    },
+    "steps": {
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Steps",
+     "type": "array"
+    },
+    "result": {
+     "additionalProperties": true,
+     "title": "Result",
+     "type": "object"
+    },
+    "error": {
+     "anyOf": [
+      {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Error"
+    },
+    "verification": {
+     "anyOf": [
+      {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Verification"
+    },
+    "created_at": {
+     "title": "Created At",
+     "type": "string"
+    },
+    "updated_at": {
+     "title": "Updated At",
+     "type": "string"
+    },
+    "next_actions": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Next Actions",
+     "type": "array"
+    }
+   },
+   "required": [
+    "operation_id",
+    "kind",
+    "status",
+    "stalled",
+    "flow_id",
+    "plan_id",
+    "steps",
+    "result",
+    "error",
+    "created_at",
+    "updated_at",
+    "next_actions"
+   ],
+   "title": "OperationView",
+   "type": "object"
+  },
+  "annotations": {
+   "title": "Verify data against the contract",
+   "read_only_hint": true,
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": true
+  }
+ },
+ {
+  "name": "observe_flow",
+  "title": "Current state of a flow",
+  "description": "Snapshot of a deployed flow: stack status, recent runs/throughput, alarm states, schedule state,\n        time since last success, last verification verdict, active operations and optionally recent cost. Fast\n        and read-only; for explanations of a failure use diagnose_failure.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "flow_id": {
+     "title": "Flow Id",
+     "type": "string"
+    },
+    "include_cost": {
+     "default": false,
+     "description": "Query Cost Explorer (USD 0.01 per call, billed to the account).",
+     "title": "Include Cost",
+     "type": "boolean"
+    }
+   },
+   "required": [
+    "flow_id"
+   ],
+   "title": "observe_flowArguments"
+  },
+  "output_schema": {
+   "additionalProperties": false,
+   "properties": {
+    "observation": {
+     "additionalProperties": true,
+     "title": "Observation",
+     "type": "object"
+    },
+    "next_actions": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Next Actions",
+     "type": "array"
+    }
+   },
+   "required": [
+    "observation",
+    "next_actions"
+   ],
+   "title": "FlowObservation",
+   "type": "object"
+  },
+  "annotations": {
+   "title": "Current state of a flow",
+   "read_only_hint": true,
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": true
+  }
+ },
+ {
+  "name": "get_run_failure",
+  "title": "Read full execution and Athena errors",
+  "description": "Read existing Step Functions failure details and Athena query errors for this flow. execution is\n        an execution ARN or name from observe_flow/diagnose_failure/get_operation. Returns full error causes,\n        query ids, StateChangeReason and AthenaError; follow next_token for older history. Does not create\n        incidents, start queries or run recovery. Use this when an error excerpt is truncated.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "flow_id": {
+     "title": "Flow Id",
+     "type": "string"
+    },
+    "execution": {
+     "title": "Execution",
+     "type": "string"
+    },
+    "next_token": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Next Token"
+    }
+   },
+   "required": [
+    "flow_id",
+    "execution"
+   ],
+   "title": "get_run_failureArguments"
+  },
+  "output_schema": {
+   "additionalProperties": true,
+   "title": "get_run_failureDictOutput",
+   "type": "object"
+  },
+  "annotations": {
+   "title": "Read full execution and Athena errors",
+   "read_only_hint": true,
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": true
+  }
+ },
+ {
+  "name": "diagnose_failure",
+  "title": "Collect evidence and hypotheses",
+  "description": "Open an incident for a flow: observed facts (failed runs with error excerpts, alarms, stack state,\n        metrics), ranked hypotheses each citing supporting fact ids, further checks to run, and affected\n        windows/files. Facts and hypotheses are kept separate. deep_probe starts a background operation that adds\n        offending-file evidence. Next: plan_recovery.",
+  "input_schema": {
+   "type": "object",
+   "$defs": {
+    "Window": {
+     "additionalProperties": false,
+     "properties": {
+      "start": {
+       "description": "ISO-8601 UTC, inclusive, e.g. 2026-10-25T00:00:00Z",
+       "title": "Start",
+       "type": "string"
+      },
+      "end": {
+       "description": "ISO-8601 UTC, exclusive",
+       "title": "End",
+       "type": "string"
+      }
+     },
+     "required": [
+      "start",
+      "end"
+     ],
+     "title": "Window",
+     "type": "object"
+    }
+   },
+   "properties": {
+    "flow_id": {
+     "title": "Flow Id",
+     "type": "string"
+    },
+    "window": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/Window"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Default: last 24 hours."
+    },
+    "deep_probe": {
+     "default": false,
+     "description": "Also run probe queries that locate offending input files (runs Athena in the account; small cost).",
+     "title": "Deep Probe",
+     "type": "boolean"
+    },
+    "idempotency_key": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Idempotency Key"
+    }
+   },
+   "required": [
+    "flow_id"
+   ],
+   "title": "diagnose_failureArguments"
+  },
+  "output_schema": {
+   "additionalProperties": false,
+   "properties": {
+    "incident_id": {
+     "title": "Incident Id",
+     "type": "string"
+    },
+    "flow_id": {
+     "title": "Flow Id",
+     "type": "string"
+    },
+    "window": {
+     "additionalProperties": {
+      "type": "string"
+     },
+     "title": "Window",
+     "type": "object"
+    },
+    "observed_facts": {
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Observed Facts",
+     "type": "array"
+    },
+    "hypotheses": {
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Hypotheses",
+     "type": "array"
+    },
+    "further_checks": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Further Checks",
+     "type": "array"
+    },
+    "affected": {
+     "additionalProperties": true,
+     "title": "Affected",
+     "type": "object"
+    },
+    "probe_operation_id": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Probe Operation Id"
+    },
+    "next_actions": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Next Actions",
+     "type": "array"
+    }
+   },
+   "required": [
+    "incident_id",
+    "flow_id",
+    "window",
+    "observed_facts",
+    "hypotheses",
+    "further_checks",
+    "affected",
+    "probe_operation_id",
+    "next_actions"
+   ],
+   "title": "IncidentView",
+   "type": "object"
+  },
+  "annotations": {
+   "title": "Collect evidence and hypotheses",
+   "read_only_hint": true,
+   "destructive_hint": false,
+   "idempotent_hint": false,
+   "open_world_hint": true
+  }
+ },
+ {
+  "name": "plan_recovery",
+  "title": "Create a recovery plan",
+  "description": "Build a recovery plan for an incident with explicit targets and impact: e.g. quarantine bad files and\n        re-run affected windows, replay failed records, re-create tables, re-apply the last template, enable the\n        schedule. Infrastructure restore and data recovery are listed separately; every recovery ends with a\n        verification step. Same preview/approval flow as changes: preview_changes, then execute_recovery.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "incident_id": {
+     "title": "Incident Id",
+     "type": "string"
+    },
+    "strategy": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "One of available_strategies; default follows the top hypothesis.",
+     "title": "Strategy"
+    }
+   },
+   "required": [
+    "incident_id"
+   ],
+   "title": "plan_recoveryArguments"
+  },
+  "output_schema": {
+   "$defs": {
+    "PlanView": {
+     "additionalProperties": false,
+     "properties": {
+      "plan_id": {
+       "title": "Plan Id",
+       "type": "string"
+      },
+      "kind": {
+       "title": "Kind",
+       "type": "string"
+      },
+      "status": {
+       "title": "Status",
+       "type": "string"
+      },
+      "summary": {
+       "title": "Summary",
+       "type": "string"
+      },
+      "account_id": {
+       "title": "Account Id",
+       "type": "string"
+      },
+      "region": {
+       "title": "Region",
+       "type": "string"
+      },
+      "flow_id": {
+       "title": "Flow Id",
+       "type": "string"
+      },
+      "stack_name": {
+       "title": "Stack Name",
+       "type": "string"
+      },
+      "pattern_id": {
+       "title": "Pattern Id",
+       "type": "string"
+      },
+      "contract": {
+       "items": {},
+       "title": "Contract",
+       "type": "array"
+      },
+      "change_reason": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Change Reason"
+      },
+      "current_state": {
+       "additionalProperties": true,
+       "title": "Current State",
+       "type": "object"
+      },
+      "desired_state": {
+       "additionalProperties": true,
+       "title": "Desired State",
+       "type": "object"
+      },
+      "resource_changes": {
+       "items": {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       "title": "Resource Changes",
+       "type": "array"
+      },
+      "code_diffs": {
+       "items": {
+        "additionalProperties": {
+         "type": "string"
+        },
+        "type": "object"
+       },
+       "title": "Code Diffs",
+       "type": "array"
+      },
+      "artifacts": {
+       "description": "name/kind/sha256/size; content omitted.",
+       "items": {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       "title": "Artifacts",
+       "type": "array"
+      },
+      "data_impact": {
+       "additionalProperties": true,
+       "title": "Data Impact",
+       "type": "object"
+      },
+      "cost": {
+       "anyOf": [
+        {
+         "additionalProperties": true,
+         "type": "object"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Cost"
+      },
+      "steps": {
+       "items": {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       "title": "Steps",
+       "type": "array"
+      },
+      "warnings": {
+       "items": {
+        "type": "string"
+       },
+       "title": "Warnings",
+       "type": "array"
+      },
+      "change_set": {
+       "anyOf": [
+        {
+         "additionalProperties": true,
+         "type": "object"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Change Set"
+      },
+      "plan_digest": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Plan Digest"
+      },
+      "expires_at": {
+       "title": "Expires At",
+       "type": "string"
+      },
+      "approval": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "Where a person approves this plan (never via an MCP tool).",
+       "title": "Approval"
+      },
+      "next_actions": {
+       "items": {
+        "type": "string"
+       },
+       "title": "Next Actions",
+       "type": "array"
+      }
+     },
+     "required": [
+      "plan_id",
+      "kind",
+      "status",
+      "summary",
+      "account_id",
+      "region",
+      "flow_id",
+      "stack_name",
+      "pattern_id",
+      "contract",
+      "change_reason",
+      "current_state",
+      "desired_state",
+      "resource_changes",
+      "code_diffs",
+      "artifacts",
+      "data_impact",
+      "cost",
+      "steps",
+      "warnings",
+      "change_set",
+      "plan_digest",
+      "expires_at",
+      "approval",
+      "next_actions"
+     ],
+     "title": "PlanView",
+     "type": "object"
+    }
+   },
+   "additionalProperties": false,
+   "properties": {
+    "plan": {
+     "$ref": "#/$defs/PlanView"
+    },
+    "available_strategies": {
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Available Strategies",
+     "type": "array"
+    }
+   },
+   "required": [
+    "plan",
+    "available_strategies"
+   ],
+   "title": "RecoveryPlanView",
+   "type": "object"
+  },
+  "annotations": {
+   "title": "Create a recovery plan",
+   "read_only_hint": false,
+   "destructive_hint": false,
+   "idempotent_hint": false,
+   "open_world_hint": true
+  }
+ },
+ {
+  "name": "execute_recovery",
+  "title": "Execute an approved recovery plan",
+  "description": "Execute an approved recovery plan (same guards as apply_changes) and re-verify the affected data; the\n        operation fails if verification fails after recovery. Returns operation_id; same idempotency_key\n        returns or resumes the same operation.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "plan_id": {
+     "title": "Plan Id",
+     "type": "string"
+    },
+    "plan_digest": {
+     "title": "Plan Digest",
+     "type": "string"
+    },
+    "idempotency_key": {
+     "description": "Caller-chosen key; re-sending the same key returns (or resumes) the same operation.",
+     "maxLength": 128,
+     "minLength": 8,
+     "title": "Idempotency Key",
+     "type": "string"
+    }
+   },
+   "required": [
+    "plan_id",
+    "plan_digest",
+    "idempotency_key"
+   ],
+   "title": "execute_recoveryArguments"
+  },
+  "output_schema": {
+   "additionalProperties": false,
+   "properties": {
+    "operation_id": {
+     "title": "Operation Id",
+     "type": "string"
+    },
+    "kind": {
+     "title": "Kind",
+     "type": "string"
+    },
+    "status": {
+     "title": "Status",
+     "type": "string"
+    },
+    "stalled": {
+     "description": "Running/queued but no live worker; re-call the start tool with the same idempotency_key to resume.",
+     "title": "Stalled",
+     "type": "boolean"
+    },
+    "flow_id": {
+     "title": "Flow Id",
+     "type": "string"
+    },
+    "plan_id": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Plan Id"
+    },
+    "steps": {
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Steps",
+     "type": "array"
+    },
+    "result": {
+     "additionalProperties": true,
+     "title": "Result",
+     "type": "object"
+    },
+    "error": {
+     "anyOf": [
+      {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Error"
+    },
+    "verification": {
+     "anyOf": [
+      {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Verification"
+    },
+    "created_at": {
+     "title": "Created At",
+     "type": "string"
+    },
+    "updated_at": {
+     "title": "Updated At",
+     "type": "string"
+    },
+    "next_actions": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Next Actions",
+     "type": "array"
+    }
+   },
+   "required": [
+    "operation_id",
+    "kind",
+    "status",
+    "stalled",
+    "flow_id",
+    "plan_id",
+    "steps",
+    "result",
+    "error",
+    "created_at",
+    "updated_at",
+    "next_actions"
+   ],
+   "title": "OperationView",
+   "type": "object"
+  },
+  "annotations": {
+   "title": "Execute an approved recovery plan",
+   "read_only_hint": false,
+   "destructive_hint": true,
+   "idempotent_hint": true,
+   "open_world_hint": true
+  }
+ },
+ {
+  "name": "get_operation",
+  "title": "Status of a long-running operation",
+  "description": "Status of an apply/recovery/verification/probe operation: per-step status and errors, result, and\n        for verifications the full check list. stalled=true means the worker died; re-call the starting tool with\n        the same idempotency_key to resume from the first unfinished step.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "operation_id": {
+     "title": "Operation Id",
+     "type": "string"
+    }
+   },
+   "required": [
+    "operation_id"
+   ],
+   "title": "get_operationArguments"
+  },
+  "output_schema": {
+   "additionalProperties": false,
+   "properties": {
+    "operation_id": {
+     "title": "Operation Id",
+     "type": "string"
+    },
+    "kind": {
+     "title": "Kind",
+     "type": "string"
+    },
+    "status": {
+     "title": "Status",
+     "type": "string"
+    },
+    "stalled": {
+     "description": "Running/queued but no live worker; re-call the start tool with the same idempotency_key to resume.",
+     "title": "Stalled",
+     "type": "boolean"
+    },
+    "flow_id": {
+     "title": "Flow Id",
+     "type": "string"
+    },
+    "plan_id": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Plan Id"
+    },
+    "steps": {
+     "items": {
+      "additionalProperties": true,
+      "type": "object"
+     },
+     "title": "Steps",
+     "type": "array"
+    },
+    "result": {
+     "additionalProperties": true,
+     "title": "Result",
+     "type": "object"
+    },
+    "error": {
+     "anyOf": [
+      {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Error"
+    },
+    "verification": {
+     "anyOf": [
+      {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Verification"
+    },
+    "created_at": {
+     "title": "Created At",
+     "type": "string"
+    },
+    "updated_at": {
+     "title": "Updated At",
+     "type": "string"
+    },
+    "next_actions": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Next Actions",
+     "type": "array"
+    }
+   },
+   "required": [
+    "operation_id",
+    "kind",
+    "status",
+    "stalled",
+    "flow_id",
+    "plan_id",
+    "steps",
+    "result",
+    "error",
+    "created_at",
+    "updated_at",
+    "next_actions"
+   ],
+   "title": "OperationView",
+   "type": "object"
+  },
+  "annotations": {
+   "title": "Status of a long-running operation",
+   "read_only_hint": true,
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false
+  }
+ }
+]
